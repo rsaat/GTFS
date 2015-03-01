@@ -1,0 +1,89 @@
+Trip:trip_id=172N-10-0 shape_id=52638 stop_id=880000933 stop_sequence=32 stop_name=R. S. Quirino, 900 departure_time=17h:39m:47s stop_lat=-23,514942 stop_lon=-46,598045
+Error:Large distance(km) from shape to stop 0,514195349504854
+Trip:trip_id=1732-10-1 shape_id=53049 stop_id=710000558 stop_sequence=16 stop_name=Av. Brás Leme, 1388 departure_time=17h:29m:15s stop_lat=-23,506982 stop_lon=-46,645679
+Error:Large distance(km) from shape to stop 0,755657840274023
+Trip:trip_id=1732-10-1 shape_id=53049 stop_id=710000553 stop_sequence=19 stop_name=Av. Brás Leme, 2594 departure_time=17h:35m:06s stop_lat=-23,503851 stop_lon=-46,634055
+Error:Large distance(km) from shape to stop 0,416713404563902
+Trip:trip_id=178L-10-1 shape_id=53424 stop_id=710000558 stop_sequence=24 stop_name=Av. Brás Leme, 1388 departure_time=18h:49m:04s stop_lat=-23,506982 stop_lon=-46,645679
+Error:Large distance(km) from shape to stop 0,755657840274023
+Trip:trip_id=178L-10-1 shape_id=53424 stop_id=710000553 stop_sequence=27 stop_name=Av. Brás Leme, 2594 departure_time=18h:55m:28s stop_lat=-23,503851 stop_lon=-46,634055
+Error:Large distance(km) from shape to stop 0,416713404563902
+Trip:trip_id=263J-10-1 shape_id=58722 stop_id=360004841 stop_sequence=36 stop_name=Av. Águia De Haia, 3379 departure_time=11h:40m:50s stop_lat=-23,519203 stop_lon=-46,475841
+Error:Large distance(km) from shape to stop 0,513994767883256
+Trip:trip_id=2702-10-1 shape_id=52695 stop_id=360004841 stop_sequence=10 stop_name=Av. Águia De Haia, 3379 departure_time=01h:06m:00s stop_lat=-23,519203 stop_lon=-46,475841
+Error:Large distance(km) from shape to stop 0,513994767883256
+Trip:trip_id=273G-10-1 shape_id=52645 stop_id=360004841 stop_sequence=10 stop_name=Av. Águia De Haia, 3379 departure_time=17h:11m:24s stop_lat=-23,519203 stop_lon=-46,475841
+Error:Large distance(km) from shape to stop 0,513994767883256
+Trip:trip_id=273X-10-1 shape_id=58619 stop_id=360004841 stop_sequence=10 stop_name=Av. Águia De Haia, 3379 departure_time=18h:12m:36s stop_lat=-23,519203 stop_lon=-46,475841
+Error:Large distance(km) from shape to stop 0,513994767883256
+Trip:trip_id=307C-10-1 shape_id=54271 stop_id=360004841 stop_sequence=10 stop_name=Av. Águia De Haia, 3379 departure_time=17h:13m:03s stop_lat=-23,519203 stop_lon=-46,475841
+Error:Large distance(km) from shape to stop 0,513994767883256
+Trip:trip_id=4288-10-0 shape_id=57009 stop_id=140014414 stop_sequence=60 stop_name=Av. Pres. Wilson, 5 departure_time=07h:18m:40s stop_lat=-23,557133 stop_lon=-46,609889
+Error:Large distance(km) from shape to stop 0,246979130885524
+Trip:trip_id=5143-31-0 shape_id=53745 stop_id=140014414 stop_sequence=33 stop_name=Av. Pres. Wilson, 5 departure_time=18h:11m:40s stop_lat=-23,557133 stop_lon=-46,609889
+Error:Large distance(km) from shape to stop 0,246979130885524
+Trip:trip_id=9701-10-1 shape_id=53809 stop_id=710016812 stop_sequence=19 stop_name=Av. Olavo Fontoura departure_time=17h:27m:18s stop_lat=-23,514521 stop_lon=-46,638925
+Error:Large distance(km) from shape to stop 0,464003009079468
+Trip:trip_id=9717-10-1 shape_id=58255 stop_id=710016812 stop_sequence=8 stop_name=Av. Olavo Fontoura departure_time=00h:49m:20s stop_lat=-23,514521 stop_lon=-46,638925
+Error:Large distance(km) from shape to stop 0,464003009079468
+Trip:trip_id=CPTM L07-0 shape_id=17846 stop_id=18925 stop_sequence=12 stop_name=Franco Da Rocha departure_time=05h:28m:00s stop_lat=-23,329799 stop_lon=-46,726484
+Error:Large distance(km) from shape to stop 5,10488271430494
+Trip:trip_id=CPTM L07-0 shape_id=17846 stop_id=18926 stop_sequence=13 stop_name=Baltazar Fidélis departure_time=05h:36m:00s stop_lat=-23,309902 stop_lon=-46,723816
+Error:Large distance(km) from shape to stop 7,17281171594397
+Trip:trip_id=CPTM L07-0 shape_id=17846 stop_id=18972 stop_sequence=15 stop_name=Botujuru departure_time=05h:52m:00s stop_lat=-23,23633 stop_lon=-46,767359
+Error:Large distance(km) from shape to stop 5,90342274579956
+Trip:trip_id=CPTM L07-0 shape_id=17846 stop_id=18973 stop_sequence=16 stop_name=Campo Limpo Paulista departure_time=06h:00m:00s stop_lat=-23,206348 stop_lon=-46,785887
+Error:Large distance(km) from shape to stop 9,73215426498818
+Trip:trip_id=CPTM L07-0 shape_id=17846 stop_id=18974 stop_sequence=17 stop_name=Várzea Paulista departure_time=06h:08m:00s stop_lat=-23,209224 stop_lon=-46,829227
+Error:Large distance(km) from shape to stop 12,1832840904292
+Trip:trip_id=CPTM L07-0 shape_id=17846 stop_id=18975 stop_sequence=18 stop_name=Jundiai departure_time=06h:16m:00s stop_lat=-23,19534 stop_lon=-46,872469
+Error:Large distance(km) from shape to stop 16,5721006987338
+Trip:trip_id=CPTM L07-1 shape_id=17847 stop_id=18975 stop_sequence=1 stop_name=Jundiai departure_time=04h:00m:00s stop_lat=-23,19534 stop_lon=-46,872469
+Error:Large distance(km) from shape to stop 2,05017367781638
+Trip:trip_id=CPTM L07-1 shape_id=17847 stop_id=18974 stop_sequence=2 stop_name=Várzea Paulista departure_time=04h:08m:00s stop_lat=-23,209224 stop_lon=-46,829227
+Error:Large distance(km) from shape to stop 6,52240405001995
+Trip:trip_id=CPTM L07-1 shape_id=17847 stop_id=18973 stop_sequence=3 stop_name=Campo Limpo Paulista departure_time=04h:16m:00s stop_lat=-23,206348 stop_lon=-46,785887
+Error:Large distance(km) from shape to stop 10,5352288165578
+Trip:trip_id=CPTM L07-1 shape_id=17847 stop_id=18972 stop_sequence=4 stop_name=Botujuru departure_time=04h:24m:00s stop_lat=-23,23633 stop_lon=-46,767359
+Error:Large distance(km) from shape to stop 13,5208647357845
+Trip:trip_id=CPTM L07-1 shape_id=17847 stop_id=18926 stop_sequence=6 stop_name=Baltazar Fidélis departure_time=04h:40m:00s stop_lat=-23,309902 stop_lon=-46,723816
+Error:Large distance(km) from shape to stop 3,60358885169863
+Trip:trip_id=CPTM L07-1 shape_id=17847 stop_id=18925 stop_sequence=7 stop_name=Franco Da Rocha departure_time=04h:48m:00s stop_lat=-23,329799 stop_lon=-46,726484
+Error:Large distance(km) from shape to stop 5,5182314827
+Trip:trip_id=CPTM L08-0 shape_id=17848 stop_id=18951 stop_sequence=16 stop_name=Jardim Silveira departure_time=05h:45m:00s stop_lat=-23,523572 stop_lon=-46,893487
+Error:Large distance(km) from shape to stop 1,29563977107587
+Trip:trip_id=CPTM L08-1 shape_id=17849 stop_id=18951 stop_sequence=9 stop_name=Jardim Silveira departure_time=04h:56m:00s stop_lat=-23,523572 stop_lon=-46,893487
+Error:Large distance(km) from shape to stop 1,25402336461475
+Trip:trip_id=CPTM L09-0 shape_id=17850 stop_id=18960 stop_sequence=1 stop_name=Osasco departure_time=04h:00m:00s stop_lat=-23,527838 stop_lon=-46,775965
+Error:Large distance(km) from shape to stop 0,95395031081568
+Trip:trip_id=CPTM L09-1 shape_id=17851 stop_id=18960 stop_sequence=18 stop_name=Osasco departure_time=04h:51m:00s stop_lat=-23,527838 stop_lon=-46,775965
+Error:Large distance(km) from shape to stop 1,56223773464356
+Trip:trip_id=CPTM L10-0 shape_id=17852 stop_id=18987 stop_sequence=1 stop_name=Brás departure_time=04h:00m:00s stop_lat=-23,545053 stop_lon=-46,616295
+Error:Large distance(km) from shape to stop 0,318701210532922
+Trip:trip_id=CPTM L10-0 shape_id=17852 stop_id=18931 stop_sequence=12 stop_name=Ribeirão Pires departure_time=05h:17m:00s stop_lat=-23,713593 stop_lon=-46,414762
+Error:Large distance(km) from shape to stop 4,0275839600427
+Trip:trip_id=CPTM L10-0 shape_id=17852 stop_id=18932 stop_sequence=13 stop_name=Rio Grande Da Serra departure_time=05h:24m:00s stop_lat=-23,743461 stop_lon=-46,391665
+Error:Large distance(km) from shape to stop 7,96285663083139
+Trip:trip_id=CPTM L10-1 shape_id=17853 stop_id=18932 stop_sequence=1 stop_name=Rio Grande Da Serra departure_time=04h:00m:00s stop_lat=-23,743461 stop_lon=-46,391665
+Error:Large distance(km) from shape to stop 0,381864371274353
+Trip:trip_id=CPTM L10-1 shape_id=17853 stop_id=18931 stop_sequence=2 stop_name=Ribeirão Pires departure_time=04h:07m:00s stop_lat=-23,713593 stop_lon=-46,414762
+Error:Large distance(km) from shape to stop 3,75545557216989
+Trip:trip_id=CPTM L10-1 shape_id=17853 stop_id=18987 stop_sequence=13 stop_name=Brás departure_time=05h:24m:00s stop_lat=-23,545053 stop_lon=-46,616295
+Error:Large distance(km) from shape to stop 1,51005428099066
+Trip:trip_id=CPTM L11-0 shape_id=17854 stop_id=18902 stop_sequence=12 stop_name=Suzano departure_time=05h:06m:00s stop_lat=-23,533832 stop_lon=-46,309381
+Error:Large distance(km) from shape to stop 2,63768292552944
+Trip:trip_id=CPTM L11-0 shape_id=17854 stop_id=18979 stop_sequence=14 stop_name=Brás Cubas departure_time=05h:18m:00s stop_lat=-23,536425 stop_lon=-46,225105
+Error:Large distance(km) from shape to stop 3,57347795669378
+Trip:trip_id=CPTM L11-0 shape_id=17854 stop_id=18980 stop_sequence=15 stop_name=Mogi Das Cruzes departure_time=05h:24m:00s stop_lat=-23,521617 stop_lon=-46,197387
+Error:Large distance(km) from shape to stop 6,75243259616494
+Trip:trip_id=CPTM L11-1 shape_id=17855 stop_id=18980 stop_sequence=2 stop_name=Mogi Das Cruzes departure_time=04h:06m:00s stop_lat=-23,521617 stop_lon=-46,197387
+Error:Large distance(km) from shape to stop 1,36172915742955
+Trip:trip_id=CPTM L11-1 shape_id=17855 stop_id=18979 stop_sequence=3 stop_name=Brás Cubas departure_time=04h:12m:00s stop_lat=-23,536425 stop_lon=-46,225105
+Error:Large distance(km) from shape to stop 4,63021317425375
+Trip:trip_id=CPTM L11-1 shape_id=17855 stop_id=18902 stop_sequence=5 stop_name=Suzano departure_time=04h:24m:00s stop_lat=-23,533832 stop_lon=-46,309381
+Error:Large distance(km) from shape to stop 5,18523499130894
+Trip:trip_id=CPTM L12-0 shape_id=17856 stop_id=1010053 stop_sequence=1 stop_name=Brás departure_time=04h:00m:00s stop_lat=-23,544917 stop_lon=-46,616052
+Error:Large distance(km) from shape to stop 4,05455740535691
+Trip:trip_id=CPTM L12-1 shape_id=17857 stop_id=1010053 stop_sequence=13 stop_name=Brás departure_time=05h:12m:00s stop_lat=-23,544917 stop_lon=-46,616052
+Error:Large distance(km) from shape to stop 4,26878576294777
+
