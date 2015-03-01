@@ -1573,13 +1573,14 @@ namespace GTFS
         /// <returns></returns>
         protected virtual uint? ParseFieldUInt(string name, string fieldName, string value)
         {
-            if(string.IsNullOrWhiteSpace(value))
+           
+            // clean first.
+            value = this.CleanFieldValue(value);
+
+            if (string.IsNullOrWhiteSpace(value))
             { // there is no value.
                 return null;
             }
-
-            // clean first.
-            value = this.CleanFieldValue(value);
 
             uint result;
             if(!uint.TryParse(value, out result))

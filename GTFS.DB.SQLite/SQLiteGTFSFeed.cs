@@ -65,6 +65,7 @@ namespace GTFS.DB.SQLite
             string sql = "INSERT INTO agency VALUES (:feed_id, :id, :agency_name, :agency_url, :agency_timezone, :agency_lang, :agency_phone, :agency_fare_url);";
             using(var command = _connection.CreateCommand())
             {
+                
                 command.CommandText = sql;
                 command.Parameters.Add(new SQLiteParameter(@"feed_id", DbType.Int64));
                 command.Parameters.Add(new SQLiteParameter(@"id", DbType.String));
@@ -280,7 +281,7 @@ namespace GTFS.DB.SQLite
                 command.Parameters[2].Value = fareAttribute.Price;
                 command.Parameters[3].Value = fareAttribute.CurrencyType;
                 command.Parameters[4].Value = (int)fareAttribute.PaymentMethod ;
-                command.Parameters[5].Value = (int)fareAttribute.Transfers;
+                command.Parameters[5].Value = (int?)fareAttribute.Transfers;
                 command.Parameters[6].Value = fareAttribute.TransferDuration;
 
                 command.ExecuteNonQuery();

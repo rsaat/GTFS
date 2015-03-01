@@ -84,7 +84,20 @@ namespace GTFS.DB.SQLite
         public int AddFeed(IGTFSFeed feed)
         {
             int newId = this.AddFeed();
-            feed.CopyTo(this.GetFeed(newId));
+            var trans = _connection.BeginTransaction();
+            try
+            {
+                feed.CopyTo(this.GetFeed(newId));
+                trans.Commit();
+            }
+            catch (Exception)
+            {
+                trans.Rollback();
+                throw;
+            }
+
+            _connection.Close();
+            
             return newId;
         }
 
