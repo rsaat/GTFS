@@ -28,3 +28,5 @@ OutputWindowsPhone*/
 test-results*/
 *.vsp
 .DotSettings
+GTFS.Sptrans.Feed/*
+GTFS.SPTrans.FeedDB/*
