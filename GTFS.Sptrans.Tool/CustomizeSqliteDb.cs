@@ -22,77 +22,23 @@ namespace GTFS.Sptrans.Tool
             CreateDbConnection(sqliteConnectionString);
         }
 
-
         public void ExecuteCustomizations()
         {
 
             //CreateIndexes();
 
-            FillShapeDistTraveledFromStopTimes();
-
-
-
-            CheckShapeDistCalulated();
-
-
-            InactivateStopsTooCloseToEachOther();
-
-            _connection.Close();
-        }
-
-        /// <summary>
-        ///     Remove paradas de uma viagem (trip) que são muito próximas uma da outra, ex menos de 50m, pois normalmente são paradas de terminais 
-        ///     e ônibus não para em todas elas. Deixar somnte a parada mais distante da parada anterior anterior.
-        /// </summary>
-        private void InactivateStopsTooCloseToEachOther()
-        {
-
-        }
-
-        private void FillShapeDistTraveledFromStopTimes()
-        {
-
-            var shapesLookup = GetShapesLookup();
-            var dsTripStopPoints = GetAllTripsStopPoints();
+            LoadDataToMemory();
 
             var trans = _sqliteHelper.BeginTransaction();
             try
             {
+                FillShapeDistTraveledFromStopTimes();
 
-                var totalCount = dsTripStopPoints.Tables[0].Rows.Count;
-                _lastShapeIndexFound = 0;
-                var rowIndex = 0;
-                var lastTrip = "";
-                foreach (DataRow drTripStopPoint in dsTripStopPoints.Tables[0].Rows)
-                {
-                    rowIndex++;
+                CheckShapeDistCalulated();
 
-                    if (rowIndex % 100 == 0)
-                    {
-                        System.Console.WriteLine("FillShapeDistTraveledFromStopTimes:" + rowIndex + " of " + totalCount);
-                    }
-
-                    var stopId = drTripStopPoint["stop_id"];
-                    var tripId = drTripStopPoint["id"];
-                    var departureTime = Convert.ToInt32(drTripStopPoint["departure_time"]);
-
-                    var shapeId = Convert.ToInt32(drTripStopPoint["shape_id"]);
-                    var shapeValues = shapesLookup[shapeId].ToArray();
-
-                    if (lastTrip != tripId.ToString())
-                    {
-                        _lastShapeIndexFound = 0;
-                        lastTrip = tripId.ToString();
-                    }
-
-                    var stopDistance = FindDistanceFromShapeStart(drTripStopPoint, shapeValues);
-
-                    UpdateShapeDistTraveled((string)tripId, (string)stopId, stopDistance, departureTime);
-
-                }
+                InactivateStopsTooCloseToEachOther();
 
                 trans.Commit();
-
             }
             catch (Exception)
             {
@@ -100,18 +46,191 @@ namespace GTFS.Sptrans.Tool
                 throw;
             }
 
+
+            _connection.Close();
         }
 
-        private void CheckShapeDistCalulated()
+        #region Inactivate Stops 
+        /// <summary>
+        ///     Remove paradas de uma viagem (trip) que são muito próximas uma da outra, ex menos de 50m, pois normalmente são paradas de terminais 
+        ///     e ônibus não para em todas elas. Deixar somente a parada mais distante da parada anterior anterior.
+        /// </summary>
+        private void InactivateStopsTooCloseToEachOther()
         {
-            var dsTripStopPoints = GetAllTripsStopPoints();
+            ClearDropOffAndPickup();
 
-            var allTrips = (from dr in dsTripStopPoints.Tables[0].AsEnumerable()
+            var allTrips = (from dr in _dsTripStopPoints.Tables[0].AsEnumerable()
                             orderby dr["id"].ToString()
                             select new { TripId = dr["id"].ToString() }).Distinct().ToArray();
 
 
-            var qTripStopPoints = from dr in dsTripStopPoints.Tables[0].AsEnumerable()
+            var qTripStopPoints = from dr in _dsTripStopPoints.Tables[0].AsEnumerable()
+                                  select new
+                                  {
+                                      TripId = dr["id"].ToString(),
+                                      StopSequence = Convert.ToInt32(dr["stop_sequence"]),
+                                      ShapeDistTraveld = Convert.ToDouble(dr["shape_dist_traveled"], CultureInfo.InvariantCulture),
+                                      StopID = dr["stop_id"].ToString(),
+                                      StopName = dr["stop_name"].ToString(),
+                                      StopLatitude = Convert.ToDouble(dr["stop_lat"]),
+                                      StopLongitude = Convert.ToDouble(dr["stop_lon"])
+                                  };
+
+            var tripStopPointsLookup = qTripStopPoints.ToLookup(r => r.TripId);
+
+            foreach (var trip in allTrips)
+            {
+                var tripStopPoints = tripStopPointsLookup[trip.TripId].ToArray();
+
+                var gloc = new Gtfs2Sqlite.Util.Geolocation();
+
+                bool isEvaluatingFirstStop;
+
+                for (int i = 1; i < tripStopPoints.Length; i++)
+                {
+                    var stopN_1 = tripStopPoints[i - 1];
+                    var stopN = tripStopPoints[i];
+
+                    isEvaluatingFirstStop = i == 1;
+
+                    var twoStopsSameName = String.Equals(stopN.StopName, stopN_1.StopName, StringComparison.CurrentCultureIgnoreCase);
+                    var distanceBetweenStops = gloc.Distance(stopN_1.StopLatitude, stopN_1.StopLongitude, stopN.StopLatitude, stopN.StopLongitude);
+                    var distanceTravelledBetweenStops = stopN.ShapeDistTraveld - stopN_1.ShapeDistTraveld;
+
+                    var isSameStop = IsSameStop(twoStopsSameName, distanceBetweenStops, distanceTravelledBetweenStops);
+
+                    if (i > 1)
+                    {
+                        if (!isSameStop)
+                        {
+                            isEvaluatingFirstStop = false;
+                        }
+
+                    }
+
+
+                    if (isSameStop)
+                    {
+                        if (isEvaluatingFirstStop)
+                        {
+                            //disable dropoff e pickup  of StopN    
+                            UpdateDropOffAndPickup(stopN.TripId, stopN.StopID, stopN.StopSequence, PickupDropOffType.NotAvailable);
+                        }
+                        else
+                        {
+                            //disable dropoff e pickup  of StopN_1 
+                            UpdateDropOffAndPickup(stopN_1.TripId, stopN_1.StopID, stopN_1.StopSequence, PickupDropOffType.NotAvailable);
+                        }
+
+                    }
+
+
+                }
+
+            }
+
+        }
+
+        private static bool IsSameStop(bool twoStopsSameName, double distanceBetweenStops, double distanceTravelledBetweenStops)
+        {
+            var AreTheSameStop = false;
+            var distance = distanceBetweenStops; //Math.Max(distanceBetweenStops);
+            if (twoStopsSameName)
+            {
+                if (distance < 0.3)
+                {
+                    AreTheSameStop = true;
+                }
+            }
+            else
+            {
+                if (distance < 0.1)
+                {
+                    AreTheSameStop = true;
+                }
+            }
+            return AreTheSameStop;
+        }
+
+        private enum PickupDropOffType
+        {
+            RegularlyScheduled = 0,
+            NotAvailable = 1
+        }
+
+        private void ClearDropOffAndPickup()
+        {
+            string sql;
+            sql = "update stop_time set pickup_type={0} , drop_off_type={0}";
+            sql = string.Format(sql, (int)PickupDropOffType.RegularlyScheduled);
+            _sqliteHelper.ExecuteNonQuery(sql);
+
+        }
+
+        private void UpdateDropOffAndPickup(string tripId, string stopId, int stopSequence, PickupDropOffType pickupDropOffType)
+        {
+            string sql;
+            sql = "update stop_time set pickup_type={0} , drop_off_type={0}  Where stop_id='{1}' AND trip_id='{2}' AND stop_sequence ={3} ";
+            sql = string.Format(sql, (int)pickupDropOffType, stopId, tripId, stopSequence);
+            var rowsUpdated = _sqliteHelper.ExecuteNonQuery(sql);
+            if (rowsUpdated != 1)
+            {
+                throw new InvalidOperationException("error updating stop_time rowsUpdated!=1 rowsUpdated=" + rowsUpdated);
+            }
+        }
+        
+        #endregion
+
+        #region Fill shape Distance Traveled
+
+        private void FillShapeDistTraveledFromStopTimes()
+        {
+
+            var shapesLookup = GetShapesLookup();
+
+            var totalCount = _dsTripStopPoints.Tables[0].Rows.Count;
+            _lastShapeIndexFound = 0;
+            var rowIndex = 0;
+            var lastTrip = "";
+            foreach (DataRow drTripStopPoint in _dsTripStopPoints.Tables[0].Rows)
+            {
+                rowIndex++;
+
+                if (rowIndex % 100 == 0)
+                {
+                    System.Console.WriteLine("FillShapeDistTraveledFromStopTimes:" + rowIndex + " of " + totalCount);
+                }
+
+                var stopId = drTripStopPoint["stop_id"];
+                var tripId = drTripStopPoint["id"];
+                var departureTime = Convert.ToInt32(drTripStopPoint["departure_time"]);
+
+                var shapeId = Convert.ToInt32(drTripStopPoint["shape_id"]);
+                var shapeValues = shapesLookup[shapeId].ToArray();
+
+                if (lastTrip != tripId.ToString())
+                {
+                    _lastShapeIndexFound = 0;
+                    lastTrip = tripId.ToString();
+                }
+
+                var stopDistance = FindDistanceFromShapeStart(drTripStopPoint, shapeValues);
+
+                UpdateShapeDistTraveled((string)tripId, (string)stopId, stopDistance, departureTime);
+
+            }
+
+        }
+
+        private void CheckShapeDistCalulated()
+        {
+
+            var allTrips = (from dr in _dsTripStopPoints.Tables[0].AsEnumerable()
+                            orderby dr["id"].ToString()
+                            select new { TripId = dr["id"].ToString() }).Distinct().ToArray();
+
+
+            var qTripStopPoints = from dr in _dsTripStopPoints.Tables[0].AsEnumerable()
                                   select new
                                   {
                                       TripId = dr["id"].ToString(),
@@ -148,27 +267,6 @@ namespace GTFS.Sptrans.Tool
             {
                 throw new InvalidOperationException("error updating stop_time rowsUpdated!=1 rowsUpdated=" + rowsUpdated);
             }
-        }
-
-        private ILookup<int, DataRow> GetShapesLookup()
-        {
-            var sql = "select * from shape s {0} order by s.id,s.shape_pt_sequence";
-
-            if (_testSingleTrip)
-            {
-                sql = string.Format(sql, "WHERE s.id=" + _testShapeId);
-            }
-            else
-            {
-                sql = string.Format(sql, "");
-            }
-            var ds = _sqliteHelper.GetDataSet(sql);
-
-            var qShapes = from dr in ds.Tables[0].AsEnumerable()
-                          select dr;
-
-            var shapesLookup = qShapes.ToLookup(r => Convert.ToInt32(r["id"]));
-            return shapesLookup;
         }
 
         private int _lastShapeIndexFound;
@@ -210,7 +308,7 @@ namespace GTFS.Sptrans.Tool
                 }
             }
 
-            Found:
+        Found:
 
             if (newIndex < 0)
             {
@@ -246,8 +344,35 @@ namespace GTFS.Sptrans.Tool
 
             System.Diagnostics.Debug.WriteLine(text);
 
+        } 
+       
+        #endregion
+
+        private void LoadDataToMemory()
+        {
+            _dsTripStopPoints = GetAllTripsStopPoints();
         }
 
+        private ILookup<int, DataRow> GetShapesLookup()
+        {
+            var sql = "select * from shape s {0} order by s.id,s.shape_pt_sequence";
+
+            if (_testSingleTrip)
+            {
+                sql = string.Format(sql, "WHERE s.id=" + _testShapeId);
+            }
+            else
+            {
+                sql = string.Format(sql, "");
+            }
+            var ds = _sqliteHelper.GetDataSet(sql);
+
+            var qShapes = from dr in ds.Tables[0].AsEnumerable()
+                          select dr;
+
+            var shapesLookup = qShapes.ToLookup(r => Convert.ToInt32(r["id"]));
+            return shapesLookup;
+        }
 
         private DataSet GetAllTripsStopPoints()
         {
@@ -282,7 +407,6 @@ namespace GTFS.Sptrans.Tool
 
         }
 
-
         private void CreateIndexes()
         {
             CreateIndex("indx_freq_trip_id", "trip_id", "frequency");
@@ -297,8 +421,7 @@ namespace GTFS.Sptrans.Tool
 
         private SQLiteConnection _connection;
         private SqLiteDatabaseHelper _sqliteHelper;
-
-
+        private DataSet _dsTripStopPoints;
 
         private void CreateDbConnection(string sqliteConnectionString)
         {
