@@ -30,3 +30,4 @@ test-results*/
 .DotSettings
 GTFS.Sptrans.Feed/*
 GTFS.SPTrans.FeedDB/*
+GTFS.Sptrans.Test/DB/SQLite/gtfssptrans.db
