@@ -6,37 +6,31 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GTFS.Sptrans.Tool.Common;
 
 namespace GTFS.Sptrans.Tool
 {
     public class CustomizeSqliteDb
     {
+        private readonly string _sptransFeedDirectory;
 
         private bool _testSingleTrip = false;
         private string _testTripId = @"178L-10-1";
         private string _testShapeId = "53424";
 
-        public CustomizeSqliteDb(string sptransSqliteDbFile)
+        public CustomizeSqliteDb(string sptransSqliteDbFile, string sptransFeedDirectory)
         {
+            _sptransFeedDirectory = sptransFeedDirectory;
             string sqliteConnectionString = string.Format(@"Data Source={0};Version=3;", sptransSqliteDbFile);
             CreateDbConnection(sqliteConnectionString);
         }
 
-        public void ExecuteCustomizations()
+        private void ExecuteWithTransaction(Action customization )
         {
-
-            //CreateIndexes();
-
-            LoadDataToMemory();
-
             var trans = _sqliteHelper.BeginTransaction();
             try
             {
-                FillShapeDistTraveledFromStopTimes();
-
-                CheckShapeDistCalulated();
-
-                InactivateStopsTooCloseToEachOther();
+                customization();
 
                 trans.Commit();
             }
@@ -45,12 +39,377 @@ namespace GTFS.Sptrans.Tool
                 trans.Rollback();
                 throw;
             }
+        }
 
+        public void ExecuteCustomizations()
+        {
+            ExecuteWithTransaction(() =>
+            {
+                var customize = new CustomizeSqliteAddDataFromSptransSite(_sqliteHelper, _sptransFeedDirectory);
+
+                customize.ExecuteCustomizations();
+            });
+           
+            return;
+            
+            ChangeDatabaseStructure();
+
+            ExecuteWithTransaction(() =>
+            {
+                LoadDataToMemory();
+                FillShapeDistTraveledFromStopTimes();
+                CheckShapeDistCalulated();
+            });
+
+
+            ExecuteWithTransaction(() =>
+            {
+
+                RemoveAccents();
+                
+                LoadDataToMemory();
+
+                InactivateStopsTooCloseToEachOther();
+
+                AddGeoHashToStops();
+
+                FillPoiCategories();
+
+                FillPoi();
+
+                FillStopsNearPois();
+
+                ShapeCompressedCreateTable();
+
+                ShapeCompressedFillTable();
+
+            });
+            
+            ShrinkSqliteDatabase();
 
             _connection.Close();
         }
 
-        #region Inactivate Stops 
+        private void ShrinkSqliteDatabase()
+        {
+            _sqliteHelper.ExecuteNonQuery("DROP TABLE shape");
+            _sqliteHelper.ExecuteNonQuery("vacuum");
+        }
+
+        #region Shape compressed
+
+
+
+        private void ShapeCompressedFillTable()
+        {
+            var sql = @"
+                    select s.id,
+                    s.shape_pt_sequence,
+                    s.shape_pt_lat,
+                    s.shape_pt_lon,
+                    s.shape_dist_traveled 
+                    from shape s
+                    order by s.id , s.shape_pt_sequence
+            ";
+
+            var dtshape = _sqliteHelper.GetDataTable(sql);
+
+            var qShape = from dr in dtshape.AsEnumerable()
+                         select dr;
+            var lookUpShapes = qShape.ToLookup(r => r["id"]);
+
+            var shapesIds = (from dr in qShape
+                             select dr["id"].ToString()).Distinct().OrderBy(x => x);
+
+            foreach (var shapeId in shapesIds)
+            {
+                var shapeBytes = ConvertShapeToBytes(lookUpShapes, shapeId);
+
+                sql = string.Format("INSERT INTO shape_compressed (FEED_ID, id,shape_data) VALUES (:FEED_ID,:id,:shape_data)");
+                var parameters = new List<SQLiteParameter>();
+                parameters.Add(_sqliteHelper.CreateParameter("FEED_ID", DbType.Int32, 1));
+                parameters.Add(_sqliteHelper.CreateParameter("id", DbType.Int32, shapeId));
+                parameters.Add(_sqliteHelper.CreateParameter("shape_data", DbType.Binary, shapeBytes));
+                _sqliteHelper.ExecuteNonQuery(sql, parameters.ToArray());
+            }
+
+
+
+        }
+
+        private static byte[] ConvertShapeToBytes(ILookup<object, DataRow> lookUpShapes, string shapeId)
+        {
+            var drShapesFromID = lookUpShapes[shapeId];
+
+            var shapesCompressed = new List<ShapeCompressed>();
+
+            foreach (var drShape in drShapesFromID.ToList().OrderBy(x => x["shape_pt_sequence"]))
+            {
+                shapesCompressed.Add(new ShapeCompressed((double)drShape["shape_pt_lat"],
+                    (double)drShape["shape_pt_lon"],
+                    (double)drShape["shape_dist_traveled"]));
+            }
+
+            var shapeBytes = new List<byte>();
+            foreach (var s in shapesCompressed)
+            {
+                shapeBytes.AddRange(s.ToBytes());
+            }
+            return shapeBytes.ToArray();
+        }
+
+
+        void ShapeCompressedCreateTable()
+        {
+
+            var sql = "CREATE TABLE shape_compressed (FEED_ID INTEGER NOT NULL, id INTEGER NOT NULL, shape_data BLOB)";
+            _sqliteHelper.ExecuteNonQuery(sql);
+
+
+            sql = "CREATE UNIQUE INDEX indx_shape_compressed_id ON shape_compressed (id);";
+            _sqliteHelper.ExecuteNonQuery(sql);
+        }
+
+
+
+        #endregion
+
+
+        #region Remove Accents
+
+        void RemoveAccents()
+        {
+            RemoveAccentsStop();
+            RemoveAccentsRoute();
+            RemoveAccentsTrip();
+        }
+
+        private void RemoveAccentsTrip()
+        {
+            var sql = "select t.id,t.trip_headsign from trip t";
+
+            var dt = _sqliteHelper.GetDataTable(sql);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                row["trip_headsign"] = Strings.RemoveDiacritics(row["trip_headsign"].ToString().ToUpper());
+            }
+
+
+            sql = "UPDATE trip SET trip_headsign = :trip_headsign  WHERE id = :id ";
+
+            var updateCommand = new SQLiteCommand(sql);
+            updateCommand.Parameters.Add(new SQLiteParameter("id", DbType.String, 8, "id"));
+            updateCommand.Parameters.Add(new SQLiteParameter("trip_headsign", DbType.String, 8, "trip_headsign"));
+
+
+            _sqliteHelper.UpdateDataTable(updateCommand, dt);
+        }
+
+        private void RemoveAccentsRoute()
+        {
+            var sql = "select r.id,r.route_long_name from route r";
+
+            var dt = _sqliteHelper.GetDataTable(sql);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                row["route_long_name"] = Strings.RemoveDiacritics(row["route_long_name"].ToString().ToUpper());
+            }
+
+
+            sql = "UPDATE route SET route_long_name = :route_long_name  WHERE id = :id ";
+
+            var updateCommand = new SQLiteCommand(sql);
+            updateCommand.Parameters.Add(new SQLiteParameter("id", DbType.String, 8, "id"));
+            updateCommand.Parameters.Add(new SQLiteParameter("route_long_name", DbType.String, 8, "route_long_name"));
+
+
+            _sqliteHelper.UpdateDataTable(updateCommand, dt);
+        }
+
+        private void RemoveAccentsStop()
+        {
+            var sql = "select s.id,s.stop_name,s.stop_desc from stop s";
+
+            var dt = _sqliteHelper.GetDataTable(sql);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                row["stop_name"] = Strings.RemoveDiacritics(row["stop_name"].ToString().ToUpper());
+                row["stop_desc"] = Strings.RemoveDiacritics(row["stop_desc"].ToString().ToUpper());
+            }
+
+
+            sql = "UPDATE stop SET stop_name = :stop_name,stop_desc=:stop_desc  WHERE id = :id ";
+
+            var updateCommand = new SQLiteCommand(sql);
+            updateCommand.Parameters.Add(new SQLiteParameter("id", DbType.Int64, 8, "id"));
+            updateCommand.Parameters.Add(new SQLiteParameter("stop_name", DbType.String, 8, "stop_name"));
+            updateCommand.Parameters.Add(new SQLiteParameter("stop_desc", DbType.String, 8, "stop_desc"));
+
+            _sqliteHelper.UpdateDataTable(updateCommand, dt);
+        }
+
+        #endregion
+
+        #region Poi Update
+
+        private void FillStopsNearPois()
+        {
+            var dtPois = GetAllPois();
+            var dtBusStops = GetAllBusStops();
+            var gloc = new Gtfs2Sqlite.Util.Geolocation();
+
+            foreach (DataRow drPoi in dtPois.Rows)
+            {
+                var qDistancePoiStops = from DataRow dr in dtBusStops.AsEnumerable()
+                                        select new
+                                        {
+                                            StopId = dr["stop_id"].ToString(),
+                                            DistanceStopPoi = gloc.Distance((double)drPoi["poi_lat"], (double)drPoi["poi_lon"], (double)dr["stop_lat"], (double)dr["stop_lon"])
+                                        };
+
+                var qStopsNearPoi = qDistancePoiStops.Where(x => x.DistanceStopPoi < 0.6).OrderBy(x => x.DistanceStopPoi).ToList();
+
+                foreach (var stop in qStopsNearPoi)
+                {
+                    var sql = string.Format("INSERT INTO poi_stop (poi_id_fk, stop_id_fk) VALUES ({0},'{1}')", drPoi["poi_id"], stop.StopId);
+                    _sqliteHelper.ExecuteNonQuery(sql);
+                }
+
+
+            }
+
+        }
+
+        private DataTable GetAllPois()
+        {
+            var sql = @"SELECT p.poi_id,p.poi_lat,p.poi_lon,p.poi_geohash from poi p";
+
+            return _sqliteHelper.GetDataTable(sql);
+        }
+
+        private DataTable GetAllBusStops()
+        {
+            var sql = @"SELECT DISTINCT  st.stop_id,
+                        s.stop_name,s.stop_lat,s.stop_lon,s.stop_geohash
+                        from  stop_time st 
+                        INNER JOIN trip t ON t.id = st.trip_id 
+                        INNER JOIN stop s ON s.id = st.stop_id 
+                        INNER JOIN route r ON r.id=t.route_id
+                        WHERE NOT (r.route_type=1 or r.route_type=2) 
+                        ORDER BY st.stop_id";
+
+            return _sqliteHelper.GetDataTable(sql);
+
+        }
+
+        private void FillPoi()
+        {
+            var sql = @"SELECT r.route_short_name, 
+                               st.stop_id,s.stop_name,
+                               s.stop_lat,s.stop_lon,s.stop_geohash,r.route_type,pc.poi_cat_id
+                        FROM  stop_time st 
+                        INNER JOIN trip t ON t.id = st.trip_id 
+                        INNER JOIN stop s ON s.id = st.stop_id 
+                        INNER JOIN route r ON r.id=t.route_id
+                        INNER JOIN poi_category pc ON pc.poi_cat_name=r.route_short_name
+                        WHERE (r.route_type=1 or r.route_type=2) AND t.direction_id=1
+                        ORDER BY  st.trip_id, st.stop_sequence"; //Subway and Train types 
+            var dt = _sqliteHelper.GetDataSet(sql).Tables[0];
+            int i = 0;
+            foreach (DataRow drRoute in dt.Rows)
+            {
+                i++;
+                sql = string.Format("INSERT INTO poi (poi_id, poi_name, poi_lat, poi_lon, poi_geohash, poi_cat_id_fk)" +
+                                    " VALUES({0}, '{1}', {2}, {3}, '{4}', {5})",
+                                    i,
+                                    drRoute["route_short_name"] + "-" + drRoute["stop_name"],
+                                    (drRoute["stop_lat"]).ToString().Replace(",", "."),
+                                    (drRoute["stop_lon"]).ToString().Replace(",", "."),
+                                    drRoute["stop_geohash"],
+                                    drRoute["poi_cat_id"]
+                                    );
+                _sqliteHelper.ExecuteNonQuery(sql);
+            }
+
+        }
+
+        private void FillPoiCategories()
+        {
+            var sql = @"SELECT r.route_short_name 
+                        FROM route r
+                        WHERE (r.route_type=1 or r.route_type=2)
+                        ORDER BY r.route_short_name"; //Subway and Train types 
+            var dt = _sqliteHelper.GetDataTable(sql);
+            int i = 0;
+            foreach (DataRow drRoute in dt.Rows)
+            {
+                i++;
+                sql = string.Format("INSERT INTO poi_category (poi_cat_id, poi_cat_name) VALUES ({0},'{1}')", i, drRoute["route_short_name"]);
+                _sqliteHelper.ExecuteNonQuery(sql);
+            }
+
+        }
+
+        private void CreatePoiTables()
+        {
+            var sql = "CREATE TABLE poi (poi_id INTEGER PRIMARY KEY,poi_cat_id_fk INTEGER, poi_name TEXT, poi_lat REAL, poi_lon REAL, poi_geohash TEXT)";
+            _sqliteHelper.ExecuteNonQuery(sql);
+            CreateIndex("indx_poi_geohash", "poi_geohash", "poi");
+            CreateIndex("indx_poi_cat_id_fk", "poi_cat_id_fk", "poi");
+
+            sql = "CREATE TABLE poi_stop (poi_id_fk INTEGER, stop_id_fk TEXT)";
+            _sqliteHelper.ExecuteNonQuery(sql);
+            CreateIndex("indx_poi_stop_poi_id_fk", "poi_id_fk", "poi_stop");
+            CreateIndex("indx_stop_id_fk", "stop_id_fk", "poi_stop");
+
+            sql = "CREATE TABLE poi_category (poi_cat_id INTEGER PRIMARY KEY, poi_cat_name TEXT)";
+            _sqliteHelper.ExecuteNonQuery(sql);
+        }
+
+        #endregion
+
+        private void ChangeDatabaseStructure()
+        {
+            CreatePoiTables();
+
+            _sqliteHelper.ExecuteNonQuery("ALTER TABLE stop ADD COLUMN  stop_geohash TEXT");
+            CreateIndex("indx_stop_geohash", "stop_geohash", "stop");
+
+            CreateIndexes();
+
+            _sqliteHelper.ExecuteNonQuery("UPDATE stop_time set shape_dist_traveled=0");
+        }
+
+        private void AddGeoHashToStops()
+        {
+            var sql = "SELECT s.id,s.stop_lat,s.stop_lon from stop s";
+            var dt = _sqliteHelper.GetDataTable(sql);
+
+
+            foreach (DataRow dr in dt.Rows)
+            {
+                var stopId = Convert.ToDouble(dr["id"]);
+                var latitude = Convert.ToDouble(dr["stop_lat"]);
+                var longitude = Convert.ToDouble(dr["stop_lon"]);
+
+                var stopGeohash = Gtfs2Sqlite.Util.Geohash.Encode(latitude, longitude);
+
+                sql = "update stop set stop_geohash='{0}' Where id='{1}'";
+                sql = string.Format(sql, stopGeohash, stopId);
+                var rowsUpdated = _sqliteHelper.ExecuteNonQuery(sql);
+
+                if (rowsUpdated != 1)
+                {
+                    throw new InvalidOperationException("error updatind geohash. Rows Updated <> 1. " + rowsUpdated);
+                }
+
+            }
+        }
+
+        #region Inactivate Stops
         /// <summary>
         ///     Remove paradas de uma viagem (trip) que são muito próximas uma da outra, ex menos de 50m, pois normalmente são paradas de terminais 
         ///     e ônibus não para em todas elas. Deixar somente a parada mais distante da parada anterior anterior.
@@ -178,7 +537,7 @@ namespace GTFS.Sptrans.Tool
                 throw new InvalidOperationException("error updating stop_time rowsUpdated!=1 rowsUpdated=" + rowsUpdated);
             }
         }
-        
+
         #endregion
 
         #region Fill shape Distance Traveled
@@ -344,8 +703,8 @@ namespace GTFS.Sptrans.Tool
 
             System.Diagnostics.Debug.WriteLine(text);
 
-        } 
-       
+        }
+
         #endregion
 
         private void LoadDataToMemory()
@@ -417,6 +776,8 @@ namespace GTFS.Sptrans.Tool
             CreateIndex("indx_st_stop_id", "stop_id", "stop_time");
             CreateIndex("indx_trip_id", "id", "trip");
             CreateIndex("indx_trip_route_id", "route_id", "trip");
+
+
         }
 
         private SQLiteConnection _connection;
@@ -433,18 +794,7 @@ namespace GTFS.Sptrans.Tool
         private void CreateIndex(string indexName, string indexField, string tableName)
         {
             var sql = string.Format("CREATE INDEX {0} ON {2} ({1})", indexName, indexField, tableName);
-            ExecuteNonQuery(sql);
+            _sqliteHelper.ExecuteNonQuery(sql);
         }
-
-        private void ExecuteNonQuery(string sql)
-        {
-            using (var command = _connection.CreateCommand())
-            {
-                command.CommandText = sql;
-                command.ExecuteNonQuery();
-            }
-        }
-
-
     }
 }

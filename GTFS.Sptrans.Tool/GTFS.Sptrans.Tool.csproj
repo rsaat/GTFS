@@ -45,12 +45,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\TimeSpanExtensions.cs" />
+    <Compile Include="CSV\DetaislDirection.cs" />
+    <Compile Include="CSV\SptransCsvFileReader.cs" />
+    <Compile Include="CSV\SptransLineDetails.cs" />
+    <Compile Include="CustomizeSqliteAddDataFromSptransSite.cs" />
+    <Compile Include="ShapeCompressed.cs" />
+    <Compile Include="Geohash.cs" />
     <Compile Include="GeoLocation.cs" />
+    <Compile Include="CSV\DetailsItineraryDay.cs" />
     <Compile Include="SqLiteDatabaseHelper.cs" />
     <Compile Include="CustomizeSqliteDb.cs" />
     <Compile Include="FeedConverter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Common\Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -78,6 +87,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
