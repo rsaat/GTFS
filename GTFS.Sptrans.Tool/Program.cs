@@ -16,11 +16,10 @@ namespace GTFS.Sptrans.Tool
         {
             var sptransSqliteDbFile = @"H:\netprojects\GTFS\GTFS.SPTrans.FeedDB\gtfssptrans.db";
             var sptransFeedDirectory = @"H:\netprojects\GTFS\GTFS.Sptrans.Feed";
-
      
-            //FeedConverter.ConvertFeedToSqliteDb(sptransSqliteDbFile, sptransFeedDirectory);       
+            //FeedConverter.ConvertFeedToSqliteDb(sptransSqliteDbFile, sptransFeedDirectory);
 
-            var customizeDb = new CustomizeSqliteDb(sptransSqliteDbFile);
+            var customizeDb = new CustomizeSqliteDb(sptransSqliteDbFile, sptransFeedDirectory);
             customizeDb.ExecuteCustomizations();
 
         }
