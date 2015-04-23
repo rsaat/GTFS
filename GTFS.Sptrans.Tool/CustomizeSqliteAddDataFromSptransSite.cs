@@ -227,7 +227,7 @@ namespace GTFS.Sptrans.Tool
             {
                 if (drTrip["service_id"].ToString().Contains(serviceId))
                 {
-                    var tripDetail = routeTrips.FirstOrDefault(r => r.DetailsItineraryDay == detailsItineraryDay);
+                    var tripDetail = routeTrips.FirstOrDefault(r => r.GtfsTripId.ToUpper() == drTrip["id"].ToString().ToUpper());
 
                     if (tripDetail != null)
                     {
