@@ -55,7 +55,7 @@ namespace GTFS.Sptrans.Tool
 
         private void UpdateAllTripFrequencies()
         {
-            var dtTrips = GetTripDataTable();
+            var dtTrips = GetBusOnlyTripDataTable();
             var total = dtTrips.Rows.Count;
             var counter = 0;
             foreach (var drTrip in dtTrips.AsEnumerable())
@@ -207,7 +207,7 @@ namespace GTFS.Sptrans.Tool
         private void AddTripTimes()
         {
             //trip_time_morning , trip_time_noon , trip_time_evening
-            var dtTrips = GetTripDataTable();
+            var dtTrips = GetBusOnlyTripDataTable();
 
             foreach (var drTrip in dtTrips.AsEnumerable())
             {
@@ -216,8 +216,9 @@ namespace GTFS.Sptrans.Tool
                 FillTripTimes(drTrip, "__D", DetailsItineraryDay.DetailsItinerarySunday);
             }
 
-
             UpdateTripDataTable(dtTrips);
+
+            UpdateEmptyTripTimes();
         }
 
         private void FillTripTimes(DataRow drTrip, string serviceId, DetailsItineraryDay detailsItineraryDay)
@@ -239,9 +240,32 @@ namespace GTFS.Sptrans.Tool
             }
         }
 
+        private void UpdateEmptyTripTimes()
+        {
+            var sql = "";
+
+            var sqlNullTripTimes = "SELECT t.id,t.id_stop_time,t.trip_time_morning,t.trip_time_noon, t.trip_time_evening FROM trip t WHERE t.trip_time_morning IS NULL";
+
+            var dtTripsWithEmptyTimes = _sqliteHelper.GetDataTable(sqlNullTripTimes);
+
+            foreach (DataRow row in dtTripsWithEmptyTimes.Rows)
+            {
+                sql = "SELECT  (MAX(st.departure_time) - MIN(st.departure_time))/60 trip_time FROM stop_time st WHERE st.trip_id = '" + row["id_stop_time"] + "'";
+                var tripTime = _sqliteHelper.ExecuteScalar(sql);
+
+                sql = "UPDATE trip SET trip_time_evening={0},trip_time_morning={0},trip_time_noon={0} ";
+                sql += "WHERE id ='{1}'";
+
+                sql = string.Format(sql, tripTime, row["id"]);
+                var affectedRows = _sqliteHelper.ExecuteNonQuery(sql);
+
+            }
+
+        }
+
         void SplitTripsWithWeekendServices()
         {
-            var dtTrips = GetTripDataTable();
+            var dtTrips = GetBusOnlyTripDataTable();
 
             var weekendServiceIds = new string[] { "USD", "US_", "U_D" };
 
@@ -279,6 +303,15 @@ namespace GTFS.Sptrans.Tool
             }
 
             UpdateTripDataTable(dtTrips);
+
+            UpdateEmptyStopTimeIds();
+        }
+
+        private void UpdateEmptyStopTimeIds()
+        {
+            var sql = "UPDATE trip SET id_stop_time = id WHERE id_stop_time IS null";
+            var affectedRows =  _sqliteHelper.ExecuteNonQuery(sql);
+
         }
 
         private void UpdateTripDataTable(DataTable dtTrips)
@@ -288,7 +321,7 @@ namespace GTFS.Sptrans.Tool
             _sqliteHelper.UpdateDataTable(updateCommand, insertCommand, dtTrips);
         }
 
-        private DataTable GetTripDataTable()
+        private DataTable GetBusOnlyTripDataTable()
         {
             var sql = "SELECT t.* FROM trip t INNER JOIN route r ON t.route_id = r.id WHERE r.route_type=3";
             var dtTrips = _sqliteHelper.GetDataTable(sql);

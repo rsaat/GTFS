@@ -45,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CustomizeSqliteBase.cs" />
+    <Compile Include="CustomizeSqliteSplitCircularLines.cs" />
     <Compile Include="Common\TimeSpanExtensions.cs" />
     <Compile Include="CSV\DetaislDirection.cs" />
     <Compile Include="CSV\SptransCsvFileReader.cs" />

@@ -43,15 +43,17 @@ namespace GTFS.Sptrans.Tool
 
         public void ExecuteCustomizations()
         {
+
             ExecuteWithTransaction(() =>
             {
-                var customize = new CustomizeSqliteAddDataFromSptransSite(_sqliteHelper, _sptransFeedDirectory);
+                var customize = new CustomizeSqliteSplitCircularLines(_sqliteHelper);
 
                 customize.ExecuteCustomizations();
             });
-           
+
             return;
-            
+
+           
             ChangeDatabaseStructure();
 
             ExecuteWithTransaction(() =>
@@ -69,7 +71,7 @@ namespace GTFS.Sptrans.Tool
                 
                 LoadDataToMemory();
 
-                InactivateStopsTooCloseToEachOther();
+                //InactivateStopsTooCloseToEachOther();
 
                 AddGeoHashToStops();
 
@@ -83,6 +85,13 @@ namespace GTFS.Sptrans.Tool
 
                 ShapeCompressedFillTable();
 
+            });
+
+            ExecuteWithTransaction(() =>
+            {
+                var customize = new CustomizeSqliteAddDataFromSptransSite(_sqliteHelper, _sptransFeedDirectory);
+
+                customize.ExecuteCustomizations();
             });
             
             ShrinkSqliteDatabase();
@@ -651,9 +660,9 @@ namespace GTFS.Sptrans.Tool
             var shapesCloseToStop = shapes.OrderBy(x => x.ShapeIndex).ToArray();
             var newIndex = -1;
             var distanceFromShapetoToStop = 0.2;
-            var distancesKm = new[] { 0.2, 0.5 };
+            var distanceTolerancesToFindShapePoint = new double[] { 0.05, 0.1, 0.2, 0.5 };
 
-            foreach (var distance in distancesKm)
+            foreach (var distance in distanceTolerancesToFindShapePoint)
             {
                 distanceFromShapetoToStop = distance;
                 for (int i = _lastShapeIndexFound; i < shapes.Count(); i++)
