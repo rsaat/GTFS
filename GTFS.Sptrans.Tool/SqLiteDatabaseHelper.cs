@@ -217,11 +217,8 @@ namespace GTFS.Sptrans.Tool
 
         public string ExecuteScalar(string sql)
         {
-            using (SQLiteConnection conn = new SQLiteConnection(connString))
-            {
-                conn.Open();
-
-                using (SQLiteCommand cmd = new SQLiteCommand(conn))
+            
+                using (SQLiteCommand cmd = new SQLiteCommand(_connection))
                 {
                     cmd.CommandText = sql;
                     cmd.CommandType = CommandType.Text;
@@ -230,12 +227,9 @@ namespace GTFS.Sptrans.Tool
                     {
                         return value.ToString();
                     }
-                    else
-                    {
-                        return "";
-                    }
+                    return "";
                 }
-            }
+            
         }
 
 
