@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AngleSharp">
+      <HintPath>..\packages\AngleSharp.0.8.4.1\lib\net45\AngleSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SQLite, Version=1.0.93.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
@@ -45,6 +48,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConvertFilesToCsv.cs" />
+    <Compile Include="DownloadFileList.cs" />
+    <Compile Include="SptransWebsiteDownloader.cs" />
     <Compile Include="CustomizeSqliteBase.cs" />
     <Compile Include="CustomizeSqliteSplitCircularLines.cs" />
     <Compile Include="Common\TimeSpanExtensions.cs" />
@@ -76,12 +82,19 @@
       <Project>{39531d68-74cf-4c1c-9271-a2c874495383}</Project>
       <Name>GTFS.IO</Name>
     </ProjectReference>
+    <ProjectReference Include="..\GTFS.Sptrans.WebsiteDownloader\GTFS.Sptrans.WebsiteDownloader.csproj">
+      <Project>{8d4e444d-8ed7-4cff-a853-fbb8e8340d3c}</Project>
+      <Name>GTFS.Sptrans.WebsiteDownloader</Name>
+    </ProjectReference>
     <ProjectReference Include="..\GTFS\GTFS.csproj">
       <Project>{81f40909-0a8a-4f2a-8f59-a54896bfae89}</Project>
       <Name>GTFS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="download.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <Content Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
