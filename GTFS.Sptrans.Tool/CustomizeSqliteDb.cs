@@ -25,7 +25,7 @@ namespace GTFS.Sptrans.Tool
             CreateDbConnection(sqliteConnectionString);
         }
 
-        private void ExecuteWithTransaction(Action customization )
+        private void ExecuteWithTransaction(Action customization)
         {
             var trans = _sqliteHelper.BeginTransaction();
             try
@@ -44,6 +44,52 @@ namespace GTFS.Sptrans.Tool
         public void ExecuteCustomizations()
         {
 
+            if (true)
+
+            {
+                ChangeDatabaseStructure();
+
+                ExecuteWithTransaction(() =>
+                {
+                    LoadDataToMemory();
+                    FillShapeDistTraveledFromStopTimes();
+                    CheckShapeDistCalulated();
+                });
+
+
+                ExecuteWithTransaction(() =>
+                {
+
+                    RemoveAccents();
+
+                    LoadDataToMemory();
+
+                    //InactivateStopsTooCloseToEachOther();
+
+                    AddGeoHashToStops();
+
+                    FillPoiCategories();
+
+                    FillPoi();
+
+                    FillStopsNearPois();
+
+                    ShapeCompressedCreateTable();
+
+                    ShapeCompressedFillTable();
+
+                });
+
+
+                ExecuteWithTransaction(() =>
+                {
+                    var customize = new CustomizeSqliteAddDataFromSptransSite(_sqliteHelper, _sptransFeedDirectory);
+
+                    customize.ExecuteCustomizations();
+                });
+
+            }
+
             ExecuteWithTransaction(() =>
             {
                 var customize = new CustomizeSqliteSplitCircularLines(_sqliteHelper);
@@ -51,49 +97,6 @@ namespace GTFS.Sptrans.Tool
                 customize.ExecuteCustomizations();
             });
 
-            return;
-
-           
-            ChangeDatabaseStructure();
-
-            ExecuteWithTransaction(() =>
-            {
-                LoadDataToMemory();
-                FillShapeDistTraveledFromStopTimes();
-                CheckShapeDistCalulated();
-            });
-
-
-            ExecuteWithTransaction(() =>
-            {
-
-                RemoveAccents();
-                
-                LoadDataToMemory();
-
-                //InactivateStopsTooCloseToEachOther();
-
-                AddGeoHashToStops();
-
-                FillPoiCategories();
-
-                FillPoi();
-
-                FillStopsNearPois();
-
-                ShapeCompressedCreateTable();
-
-                ShapeCompressedFillTable();
-
-            });
-
-            ExecuteWithTransaction(() =>
-            {
-                var customize = new CustomizeSqliteAddDataFromSptransSite(_sqliteHelper, _sptransFeedDirectory);
-
-                customize.ExecuteCustomizations();
-            });
-            
             ShrinkSqliteDatabase();
 
             _connection.Close();
@@ -660,7 +663,7 @@ namespace GTFS.Sptrans.Tool
             var shapesCloseToStop = shapes.OrderBy(x => x.ShapeIndex).ToArray();
             var newIndex = -1;
             var distanceFromShapetoToStop = 0.2;
-            var distanceTolerancesToFindShapePoint = new double[] { 0.05, 0.1, 0.2, 0.5 };
+            var distanceTolerancesToFindShapePoint = new double[] { 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5 };
 
             foreach (var distance in distanceTolerancesToFindShapePoint)
             {
