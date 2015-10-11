@@ -92,10 +92,72 @@ namespace GTFS.Sptrans.Tool
                 }
 
                 UpdateTripDataTable(dtTrips);
+
+                FillIsCircularField();
             }
 
-            FillIsCircularField();
+            FillCutOffCircularField();
 
+        }
+
+        private Dictionary<string, int> _mCutOffStopSeqCircularTrip = new Dictionary<string, int>();
+
+        private void FillCutOffCircularField()
+        {
+            FindCircularTripCutoffStopSequence();
+
+            var dtTrips = GetBusOnlyTripDataTable();
+
+            foreach (DataRow dr in dtTrips.Rows)
+            {
+                dr["circular_cut_stop_seq"] = 0;
+
+                if (_mCutOffStopSeqCircularTrip.Keys.Contains(dr["id"]))
+                {
+                    dr["circular_cut_stop_seq"] = _mCutOffStopSeqCircularTrip[dr["id"].EmptyIfNull()];
+                }
+            }
+
+            UpdateTripDataTable(dtTrips);
+
+        }
+
+        private void FindCircularTripCutoffStopSequence()
+        {
+            var circularTrips = GetAllCircularTripsUsingShape();
+            var allTripStops = GetAllTripsStopPointsWeekendSplited();
+
+            var tripsLookup = allTripStops.Tables[0].AsEnumerable().ToLookup(x => x["id"].EmptyIfNull());
+
+            foreach (var circularTripId in circularTrips)
+            {
+                var tripStops = tripsLookup[circularTripId];
+                var drFirst = tripStops.First();
+                var firstLat = (double) drFirst["stop_lat"];
+                var firstLon = (double) drFirst["stop_lon"];
+                var maxDistance = 0.0;
+                var maxDistanceStopSequence = 0;
+                foreach (var drTripStop in tripStops)
+                {
+                    var distance = _geoLocation.Distance(firstLat, firstLon, (double) drTripStop["stop_lat"],
+                        (double) drTripStop["stop_lon"]);
+
+                    if (distance >= maxDistance)
+                    {
+                        maxDistance = distance;
+                        maxDistanceStopSequence = Convert.ToInt32(drTripStop["stop_sequence"]);
+                    }
+                }
+
+                if (maxDistanceStopSequence > 0)
+                {
+                    _mCutOffStopSeqCircularTrip.Add(circularTripId, maxDistanceStopSequence);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Error finding cutoff stop sequence for circular trip " + circularTripId);
+                }
+            }
         }
 
         private void FillIsCircularField()
@@ -145,7 +207,7 @@ namespace GTFS.Sptrans.Tool
 
         private List<string> GetAllCircularTripsUsingShape()
         {
-            var sql = "select t.id, s.shape_data from trip t INNER join shape_compressed s on t.shape_id=s.id";
+            var sql = "select t.id, s.shape_data from trip t INNER join shape_compressed s on t.shape_id=s.id ORDER BY  t.id";
             var ds = _sqliteHelper.GetDataSet(sql);
             var circularTrips = new List<string>();
 
@@ -173,7 +235,7 @@ namespace GTFS.Sptrans.Tool
 
         }
 
-        
+
         public ICollection<ShapeCompressed> GetShapePoints(byte[] shapeData)
         {
 
@@ -196,6 +258,9 @@ namespace GTFS.Sptrans.Tool
         {
             _sqliteHelper.ExecuteNonQuery("ALTER TABLE trip ADD COLUMN  is_circular INT");
             _sqliteHelper.ExecuteNonQuery("UPDATE trip SET is_circular=0");
+
+            _sqliteHelper.ExecuteNonQuery("ALTER TABLE trip ADD COLUMN  circular_cut_stop_seq INT");
+            _sqliteHelper.ExecuteNonQuery("UPDATE trip SET circular_cut_stop_seq=0");
         }
 
     }
