@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using GTFS.Sptrans.Tool.CSV;
+using System.Linq;
 using GTFS.Sptrans.Tool.Common;
+using GTFS.Sptrans.Tool.CSV;
 
-namespace GTFS.Sptrans.Tool
+namespace GTFS.Sptrans.Tool.CustomizeDatabase
 {
     public class CustomizeSqliteAddDataFromSptransSite
     {
