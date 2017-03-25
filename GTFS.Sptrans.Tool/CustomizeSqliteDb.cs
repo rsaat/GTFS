@@ -45,13 +45,13 @@ namespace GTFS.Sptrans.Tool
         {
 
             if (true)
-
             {
                 ChangeDatabaseStructure();
 
                 ExecuteWithTransaction(() =>
                 {
                     LoadDataToMemory();
+                    LoadTripStopLookupsAndFillLineardistance();
                     FillShapeDistTraveledFromStopTimes();
                     CheckShapeDistCalulated();
                 });
@@ -421,137 +421,7 @@ namespace GTFS.Sptrans.Tool
             }
         }
 
-        #region Inactivate Stops
-        /// <summary>
-        ///     Remove paradas de uma viagem (trip) que são muito próximas uma da outra, ex menos de 50m, pois normalmente são paradas de terminais 
-        ///     e ônibus não para em todas elas. Deixar somente a parada mais distante da parada anterior anterior.
-        /// </summary>
-        private void InactivateStopsTooCloseToEachOther()
-        {
-            ClearDropOffAndPickup();
-
-            var allTrips = (from dr in _dsTripStopPoints.Tables[0].AsEnumerable()
-                            orderby dr["id"].ToString()
-                            select new { TripId = dr["id"].ToString() }).Distinct().ToArray();
-
-
-            var qTripStopPoints = from dr in _dsTripStopPoints.Tables[0].AsEnumerable()
-                                  select new
-                                  {
-                                      TripId = dr["id"].ToString(),
-                                      StopSequence = Convert.ToInt32(dr["stop_sequence"]),
-                                      ShapeDistTraveld = Convert.ToDouble(dr["shape_dist_traveled"], CultureInfo.InvariantCulture),
-                                      StopID = dr["stop_id"].ToString(),
-                                      StopName = dr["stop_name"].ToString(),
-                                      StopLatitude = Convert.ToDouble(dr["stop_lat"]),
-                                      StopLongitude = Convert.ToDouble(dr["stop_lon"])
-                                  };
-
-            var tripStopPointsLookup = qTripStopPoints.ToLookup(r => r.TripId);
-
-            foreach (var trip in allTrips)
-            {
-                var tripStopPoints = tripStopPointsLookup[trip.TripId].ToArray();
-
-                var gloc = new Gtfs2Sqlite.Util.Geolocation();
-
-                bool isEvaluatingFirstStop;
-
-                for (int i = 1; i < tripStopPoints.Length; i++)
-                {
-                    var stopN_1 = tripStopPoints[i - 1];
-                    var stopN = tripStopPoints[i];
-
-                    isEvaluatingFirstStop = i == 1;
-
-                    var twoStopsSameName = String.Equals(stopN.StopName, stopN_1.StopName, StringComparison.CurrentCultureIgnoreCase);
-                    var distanceBetweenStops = gloc.Distance(stopN_1.StopLatitude, stopN_1.StopLongitude, stopN.StopLatitude, stopN.StopLongitude);
-                    var distanceTravelledBetweenStops = stopN.ShapeDistTraveld - stopN_1.ShapeDistTraveld;
-
-                    var isSameStop = IsSameStop(twoStopsSameName, distanceBetweenStops, distanceTravelledBetweenStops);
-
-                    if (i > 1)
-                    {
-                        if (!isSameStop)
-                        {
-                            isEvaluatingFirstStop = false;
-                        }
-
-                    }
-
-
-                    if (isSameStop)
-                    {
-                        if (isEvaluatingFirstStop)
-                        {
-                            //disable dropoff e pickup  of StopN    
-                            UpdateDropOffAndPickup(stopN.TripId, stopN.StopID, stopN.StopSequence, PickupDropOffType.NotAvailable);
-                        }
-                        else
-                        {
-                            //disable dropoff e pickup  of StopN_1 
-                            UpdateDropOffAndPickup(stopN_1.TripId, stopN_1.StopID, stopN_1.StopSequence, PickupDropOffType.NotAvailable);
-                        }
-
-                    }
-
-
-                }
-
-            }
-
-        }
-
-        private static bool IsSameStop(bool twoStopsSameName, double distanceBetweenStops, double distanceTravelledBetweenStops)
-        {
-            var AreTheSameStop = false;
-            var distance = distanceBetweenStops; //Math.Max(distanceBetweenStops);
-            if (twoStopsSameName)
-            {
-                if (distance < 0.3)
-                {
-                    AreTheSameStop = true;
-                }
-            }
-            else
-            {
-                if (distance < 0.1)
-                {
-                    AreTheSameStop = true;
-                }
-            }
-            return AreTheSameStop;
-        }
-
-        private enum PickupDropOffType
-        {
-            RegularlyScheduled = 0,
-            NotAvailable = 1
-        }
-
-        private void ClearDropOffAndPickup()
-        {
-            string sql;
-            sql = "update stop_time set pickup_type={0} , drop_off_type={0}";
-            sql = string.Format(sql, (int)PickupDropOffType.RegularlyScheduled);
-            _sqliteHelper.ExecuteNonQuery(sql);
-
-        }
-
-        private void UpdateDropOffAndPickup(string tripId, string stopId, int stopSequence, PickupDropOffType pickupDropOffType)
-        {
-            string sql;
-            sql = "update stop_time set pickup_type={0} , drop_off_type={0}  Where stop_id='{1}' AND trip_id='{2}' AND stop_sequence ={3} ";
-            sql = string.Format(sql, (int)pickupDropOffType, stopId, tripId, stopSequence);
-            var rowsUpdated = _sqliteHelper.ExecuteNonQuery(sql);
-            if (rowsUpdated != 1)
-            {
-                throw new InvalidOperationException("error updating stop_time rowsUpdated!=1 rowsUpdated=" + rowsUpdated);
-            }
-        }
-
-        #endregion
-
+     
         #region Fill shape Distance Traveled
 
         private void FillShapeDistTraveledFromStopTimes()
@@ -665,10 +535,50 @@ namespace GTFS.Sptrans.Tool
             var distanceFromShapetoToStop = 0.2;
             var distanceTolerancesToFindShapePoint = new double[] { 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5 };
 
+
+            var linearDitance = (double)drTripStopPoint["shape_dist_traveled_linear"];
+            var startShape = shapes.FirstOrDefault(s => s.ShapeDistTraveled >= linearDitance);
+
+            var startIndexToSearch = 0;
+            if (startShape != null)
+            {
+                startIndexToSearch = startShape.ShapeIndex - 1;
+            }
+            else
+            {
+                startIndexToSearch = _lastShapeIndexFound;
+            }
+
+
+            var linearDitanceToEnd = (double)drTripStopPoint["shape_dist_to_end_linear"];
+            var maxDistanceToSerach = shapesCloseToStop.Last().ShapeDistTraveled - linearDitanceToEnd;
+           
+            var endShape = shapes.FirstOrDefault(s => s.ShapeDistTraveled >= maxDistanceToSerach);
+
+            var maxIndexToSerach = shapes.Count();
+            if (endShape!=null)
+            {
+                maxIndexToSerach = endShape.ShapeIndex - 1;
+            }
+
+
+           var q = shapes.Where(x => x.ShapeIndex >= (startIndexToSearch + 1))
+                .Where(x => x.ShapeIndex <= (maxIndexToSerach + 1)).OrderBy(x=>x.DistanceFromShape);
+
+            var nearShape = q.FirstOrDefault();
+
+            if (nearShape!=null)
+            {
+                _lastShapeIndexFound = nearShape.ShapeIndex -1;
+                return nearShape.ShapeDistTraveled;
+            }
+
             foreach (var distance in distanceTolerancesToFindShapePoint)
             {
+
                 distanceFromShapetoToStop = distance;
-                for (int i = _lastShapeIndexFound; i < shapes.Count(); i++)
+
+                for (int i = startIndexToSearch; i < maxIndexToSerach ; i++)
                 {
                     if (shapesCloseToStop[i].DistanceFromShape < distanceFromShapetoToStop)
                     {
@@ -691,7 +601,6 @@ namespace GTFS.Sptrans.Tool
             {
                 _lastShapeIndexFound = newIndex;
             }
-
 
             return shapesCloseToStop[newIndex].ShapeDistTraveled;
 
@@ -722,6 +631,45 @@ namespace GTFS.Sptrans.Tool
         private void LoadDataToMemory()
         {
             _dsTripStopPoints = GetAllTripsStopPoints();
+
+        }
+
+        private void LoadTripStopLookupsAndFillLineardistance()
+        {
+            _tripStopsLookup = _dsTripStopPoints.Tables[0].AsEnumerable().ToLookup(r => r["id"].ToString());
+
+            var ids = _tripStopsLookup.Select(x => x.Key).ToArray();
+
+            var gloc = new Gtfs2Sqlite.Util.Geolocation();
+
+            foreach (var id in ids)
+            {
+                var drStops = _tripStopsLookup[id].ToArray();
+                var distanceLinear = 0.0;
+
+                Console.Write("\r linear distance trip:" + id);
+
+                for (int i = 1; i < drStops.Length; i++)
+                {
+                    var stop1_lat = Convert.ToDouble(drStops[i - 1]["stop_lat"]);
+                    var stop1_lon = Convert.ToDouble(drStops[i - 1]["stop_lon"]);
+                    var stop2_lat = Convert.ToDouble(drStops[i]["stop_lat"]);
+                    var stop2_lon = Convert.ToDouble(drStops[i]["stop_lon"]);
+
+                    distanceLinear += gloc.Distance(stop1_lat, stop1_lon, stop2_lat, stop2_lon);
+                    drStops[i]["shape_dist_traveled_linear"] = distanceLinear * 1000.0;
+                }
+
+                for (int i = 0; i < drStops.Length; i++)
+                {
+                    drStops[i]["shape_dist_to_end_linear"] = (double)drStops[drStops.Length-1]["shape_dist_traveled_linear"] -
+                                                             (double)drStops[i]["shape_dist_traveled_linear"];
+                }
+
+
+            }
+
+            _dsTripStopPoints.AcceptChanges();
         }
 
         private ILookup<int, DataRow> GetShapesLookup()
@@ -754,6 +702,8 @@ namespace GTFS.Sptrans.Tool
             st.stop_id,
             st.stop_sequence,
             st.shape_dist_traveled,
+            0.0 AS shape_dist_traveled_linear,
+            0.0 AS shape_dist_to_end_linear,
             st.departure_time,
             s.stop_lat,
             s.stop_lon,
@@ -795,6 +745,7 @@ namespace GTFS.Sptrans.Tool
         private SQLiteConnection _connection;
         private SqLiteDatabaseHelper _sqliteHelper;
         private DataSet _dsTripStopPoints;
+        private ILookup<string, DataRow> _tripStopsLookup;
 
         private void CreateDbConnection(string sqliteConnectionString)
         {

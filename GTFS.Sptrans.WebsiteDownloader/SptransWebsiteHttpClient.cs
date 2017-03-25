@@ -5,6 +5,14 @@ using System.Net.Http;
 
 namespace GTFS.Sptrans.WebsiteDownloader
 {
+    /// <summary>
+    ///    Cria lista de linhas de onibus a partir do site da sptrans 
+    /// </summary>
+    /// <remarks>
+    ///    Verifique se o link continua funcionando
+    ///    http://200.99.150.170/PlanOperWeb/linhaselecionada.asp?Linha=%
+    /// 
+    /// </remarks>
     public class SptransWebsiteHttpClient
     {
         private HttpClientHandler _handler;
