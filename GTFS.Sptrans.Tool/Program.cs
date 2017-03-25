@@ -10,6 +10,20 @@ using GTFS.IO;
 
 namespace GTFS.Sptrans.Tool
 {
+    /// <summary>
+    ///    Ferralmenta para Atualização do palicativo onibus em são paulo 
+    /// </summary>
+    /// <remarks>
+    ///     
+    ///      1) Verifque se o link http://200.99.150.170/PlanOperWeb/linhaselecionada.asp?Linha=%  
+    ///         continua funcionando apresentando os links de todos os onibus   
+    ///      2) Cria lista de arquivos para download para colocar no roterador  createDownloadFileScript = true
+    ///      3) Converte arquivos html da sptrans para planilha en csv    executeConversionSptransFilesToCsv = true
+    ///      4) Baixe arquivos GTFS da Sptrans para pasta H:\netprojects\GTFS\GTFS.Sptrans.Feed
+    ///      5) Copie o arquivo CSV gerado e coloque na pasta H:\netprojects\GTFS\GTFS.Sptrans.Feed
+    ///      6) Converte arquivos para sqlite convertGtsfToSqlite=true 
+    /// 
+    /// </remarks>
     class Program
     {
         static void Main(string[] args)
