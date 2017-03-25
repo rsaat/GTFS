@@ -4,11 +4,9 @@ using System.Data;
 using System.Data.SQLite;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using GTFS.Sptrans.Tool.Common;
 
-namespace GTFS.Sptrans.Tool
+namespace GTFS.Sptrans.Tool.CustomizeDatabase
 {
     public class CustomizeSqliteDb
     {

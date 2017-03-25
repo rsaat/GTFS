@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using GTFS.DB;
 using GTFS.DB.SQLite;
 using GTFS.IO;
+using GTFS.Sptrans.Tool.CustomizeDatabase;
 
 namespace GTFS.Sptrans.Tool
 {
