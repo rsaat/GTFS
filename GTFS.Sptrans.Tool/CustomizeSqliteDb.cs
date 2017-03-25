@@ -63,9 +63,7 @@ namespace GTFS.Sptrans.Tool
                     RemoveAccents();
 
                     LoadDataToMemory();
-
-                    //InactivateStopsTooCloseToEachOther();
-
+                   
                     AddGeoHashToStops();
 
                     FillPoiCategories();
@@ -421,7 +419,7 @@ namespace GTFS.Sptrans.Tool
             }
         }
 
-     
+
         #region Fill shape Distance Traveled
 
         private void FillShapeDistTraveledFromStopTimes()
@@ -430,16 +428,15 @@ namespace GTFS.Sptrans.Tool
             var shapesLookup = GetShapesLookup();
 
             var totalCount = _dsTripStopPoints.Tables[0].Rows.Count;
-            _lastShapeIndexFound = 0;
             var rowIndex = 0;
-            var lastTrip = "";
+            
             foreach (DataRow drTripStopPoint in _dsTripStopPoints.Tables[0].Rows)
             {
                 rowIndex++;
 
                 if (rowIndex % 100 == 0)
                 {
-                    System.Console.WriteLine("FillShapeDistTraveledFromStopTimes:" + rowIndex + " of " + totalCount);
+                    System.Console.Write("\r FillShapeDistTraveledFromStopTimes:" + rowIndex + " of " + totalCount);
                 }
 
                 var stopId = drTripStopPoint["stop_id"];
@@ -448,12 +445,6 @@ namespace GTFS.Sptrans.Tool
 
                 var shapeId = Convert.ToInt32(drTripStopPoint["shape_id"]);
                 var shapeValues = shapesLookup[shapeId].ToArray();
-
-                if (lastTrip != tripId.ToString())
-                {
-                    _lastShapeIndexFound = 0;
-                    lastTrip = tripId.ToString();
-                }
 
                 var stopDistance = FindDistanceFromShapeStart(drTripStopPoint, shapeValues);
 
@@ -510,7 +501,6 @@ namespace GTFS.Sptrans.Tool
             }
         }
 
-        private int _lastShapeIndexFound;
 
         private double FindDistanceFromShapeStart(DataRow drTripStopPoint, DataRow[] shapeValues)
         {
@@ -518,7 +508,6 @@ namespace GTFS.Sptrans.Tool
 
             var stopLatitude = Convert.ToDouble(drTripStopPoint["stop_lat"]);
             var stopLongitude = Convert.ToDouble(drTripStopPoint["stop_lon"]);
-
 
             var shapes = from drShape in shapeValues
                          select new
@@ -530,14 +519,10 @@ namespace GTFS.Sptrans.Tool
                              ShapeDistTraveled = (double)drShape["shape_dist_traveled"]
                          };
 
-            var shapesCloseToStop = shapes.OrderBy(x => x.ShapeIndex).ToArray();
-            var newIndex = -1;
-            var distanceFromShapetoToStop = 0.2;
-            var distanceTolerancesToFindShapePoint = new double[] { 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5 };
-
+            var shapesOrdered = shapes.OrderBy(x => x.ShapeIndex).ToArray();
 
             var linearDitance = (double)drTripStopPoint["shape_dist_traveled_linear"];
-            var startShape = shapes.FirstOrDefault(s => s.ShapeDistTraveled >= linearDitance);
+            var startShape = shapesOrdered.FirstOrDefault(s => s.ShapeDistTraveled >= linearDitance);
 
             var startIndexToSearch = 0;
             if (startShape != null)
@@ -546,64 +531,41 @@ namespace GTFS.Sptrans.Tool
             }
             else
             {
-                startIndexToSearch = _lastShapeIndexFound;
+                goto FindError;
             }
 
 
             var linearDitanceToEnd = (double)drTripStopPoint["shape_dist_to_end_linear"];
-            var maxDistanceToSerach = shapesCloseToStop.Last().ShapeDistTraveled - linearDitanceToEnd;
-           
-            var endShape = shapes.FirstOrDefault(s => s.ShapeDistTraveled >= maxDistanceToSerach);
+            var maxDistanceToSerach = shapesOrdered.Last().ShapeDistTraveled - linearDitanceToEnd;
 
-            var maxIndexToSerach = shapes.Count();
-            if (endShape!=null)
+            var endShape = shapesOrdered.FirstOrDefault(s => s.ShapeDistTraveled >= maxDistanceToSerach);
+
+            var maxIndexToSerach = shapesOrdered.Count();
+            if (endShape != null)
             {
                 maxIndexToSerach = endShape.ShapeIndex - 1;
             }
 
 
-           var q = shapes.Where(x => x.ShapeIndex >= (startIndexToSearch + 1))
-                .Where(x => x.ShapeIndex <= (maxIndexToSerach + 1)).OrderBy(x=>x.DistanceFromShape);
+            var q = shapesOrdered.Where(x => x.ShapeIndex >= (startIndexToSearch + 1))
+                 .Where(x => x.ShapeIndex <= (maxIndexToSerach + 1)).OrderBy(x => x.DistanceFromShape);
 
             var nearShape = q.FirstOrDefault();
 
-            if (nearShape!=null)
+            if (nearShape != null)
             {
-                _lastShapeIndexFound = nearShape.ShapeIndex -1;
+                if (nearShape.DistanceFromShape>0.5)
+                {
+                    ReportStopGtfsErrors("Near Shape Distant " + nearShape.DistanceFromShape , drTripStopPoint);
+                    goto FindError;
+                }
+
                 return nearShape.ShapeDistTraveled;
             }
-
-            foreach (var distance in distanceTolerancesToFindShapePoint)
-            {
-
-                distanceFromShapetoToStop = distance;
-
-                for (int i = startIndexToSearch; i < maxIndexToSerach ; i++)
-                {
-                    if (shapesCloseToStop[i].DistanceFromShape < distanceFromShapetoToStop)
-                    {
-                        newIndex = i;
-                        goto Found;
-                    }
-
-                }
-            }
-
-        Found:
-
-            if (newIndex < 0)
-            {
-                newIndex = _lastShapeIndexFound;
-                var distance = shapesCloseToStop[newIndex].DistanceFromShape;
-                ReportStopGtfsErrors("Large distance(km) from shape to stop " + distance, drTripStopPoint);
-            }
-            else
-            {
-                _lastShapeIndexFound = newIndex;
-            }
-
-            return shapesCloseToStop[newIndex].ShapeDistTraveled;
-
+           
+           FindError:
+            ReportStopGtfsErrors("Near Shape Not found", drTripStopPoint);
+            return linearDitance;
         }
 
         private void ReportStopGtfsErrors(string message, DataRow drTripStopPoint)
@@ -662,7 +624,7 @@ namespace GTFS.Sptrans.Tool
 
                 for (int i = 0; i < drStops.Length; i++)
                 {
-                    drStops[i]["shape_dist_to_end_linear"] = (double)drStops[drStops.Length-1]["shape_dist_traveled_linear"] -
+                    drStops[i]["shape_dist_to_end_linear"] = (double)drStops[drStops.Length - 1]["shape_dist_traveled_linear"] -
                                                              (double)drStops[i]["shape_dist_traveled_linear"];
                 }
 
