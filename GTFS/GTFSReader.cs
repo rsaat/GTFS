@@ -1607,6 +1607,8 @@ namespace GTFS
             // clean first.
             value = this.CleanFieldValue(value);
 
+            value = value.Replace(",", ".");
+
             double result;
             if (!double.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
             { // parsing failed!
