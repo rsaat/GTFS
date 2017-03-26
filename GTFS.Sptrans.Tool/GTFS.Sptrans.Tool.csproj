@@ -49,6 +49,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomizeDatabase\ConvertFilesToCsv.cs" />
+    <Compile Include="CustomizeDatabase\CustomizeSqliteChangeDatabaseStructure.cs" />
+    <Compile Include="CustomizeDatabase\ShapeCompressed.cs" />
     <Compile Include="DownloadFileList.cs" />
     <Compile Include="SptransWebsiteDownloader.cs" />
     <Compile Include="CustomizeDatabase\CustomizeSqliteBase.cs" />
@@ -58,7 +60,6 @@
     <Compile Include="CSV\SptransCsvFileReader.cs" />
     <Compile Include="CSV\SptransLineDetails.cs" />
     <Compile Include="CustomizeDatabase\CustomizeSqliteAddDataFromSptransSite.cs" />
-    <Compile Include="ShapeCompressed.cs" />
     <Compile Include="Geohash.cs" />
     <Compile Include="GeoLocation.cs" />
     <Compile Include="CSV\DetailsItineraryDay.cs" />
