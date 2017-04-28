@@ -79,6 +79,10 @@
       <Project>{41b2bada-85ab-4967-8511-16eede2301aa}</Project>
       <Name>GTFS.DB.SQLite</Name>
     </ProjectReference>
+    <ProjectReference Include="..\GTFS.IO.Desktop\GTFS.IO.Desktop.csproj">
+      <Project>{869456E4-50EF-4777-9E77-9A6AC96B406A}</Project>
+      <Name>GTFS.IO.Desktop</Name>
+    </ProjectReference>
     <ProjectReference Include="..\GTFS.IO\GTFS.IO.csproj">
       <Project>{39531d68-74cf-4c1c-9271-a2c874495383}</Project>
       <Name>GTFS.IO</Name>

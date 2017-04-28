@@ -22,7 +22,7 @@ namespace GTFS.Sptrans.Test
            // execute the reader.
            var feed = reader.Read(new GTFSDirectorySource(new DirectoryInfo(@"H:\netprojects\GTFS\GTFS.Sptrans.Test\GtfsSpTrans")));
 
-            var agency = feed.GetAgencies().First();
+            var agency = feed.Agencies.First();
             Assert.That(agency.Name.ToLower(), Is.StringContaining("sptrans"));
 
         }

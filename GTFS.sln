@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTFS.Test", "GTFS.Test\GTFS.Test.csproj", "{1B647AFD-FE2D-4956-9697-34E6990A6C0C}"
 EndProject
@@ -14,6 +14,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTFS.Tool", "GTFS.Tool\GTFS.Tool.csproj", "{07D5B1E0-328D-47EA-A086-2F312AF7EF68}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTFS.IO.Desktop", "GTFS.IO.Desktop\GTFS.IO.Desktop.csproj", "{869456E4-50EF-4777-9E77-9A6AC96B406A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTFS.Sptrans.Test", "GTFS.Sptrans.Test\GTFS.Sptrans.Test.csproj", "{5675984E-E4E6-4E51-9434-CD9AD1D74161}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTFS.Sptrans.Tool", "GTFS.Sptrans.Tool\GTFS.Sptrans.Tool.csproj", "{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTFS.Sptrans.WebsiteDownloader", "GTFS.Sptrans.WebsiteDownloader\GTFS.Sptrans.WebsiteDownloader.csproj", "{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,6 +73,30 @@ Global
 		{869456E4-50EF-4777-9E77-9A6AC96B406A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{869456E4-50EF-4777-9E77-9A6AC96B406A}.Release|x64.ActiveCfg = Release|x64
 		{869456E4-50EF-4777-9E77-9A6AC96B406A}.Release|x64.Build.0 = Release|x64
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Debug|x64.Build.0 = Debug|Any CPU
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Release|x64.ActiveCfg = Release|Any CPU
+		{5675984E-E4E6-4E51-9434-CD9AD1D74161}.Release|x64.Build.0 = Release|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Debug|x64.Build.0 = Debug|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Release|x64.ActiveCfg = Release|Any CPU
+		{94CE3F6B-BEDC-42C8-90D8-DEB5510DF799}.Release|x64.Build.0 = Release|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Debug|x64.Build.0 = Debug|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Release|x64.ActiveCfg = Release|Any CPU
+		{8D4E444D-8ED7-4CFF-A853-FBB8E8340D3C}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
